@@ -19,31 +19,35 @@ pipeline {
             }
         }
         stage('Checkout') {
-            steps {
-                script {
-                    if (params.DEPLOY_TAG?.trim()) {
-                        checkout([
-                            $class: 'GitSCM',
-                            branches: [[name: "refs/tags/v${params.DEPLOY_TAG}"]],
-                            userRemoteConfigs: [[
-                                url: "${env.GIT_REPO_URL}",
-                                credentialsId: 'github-token'
-                            ]]
-                        ])
-                        echo "Checked out ver2 at tag v${params.DEPLOY_TAG}"
-                    } else {
-                        checkout([
-                            $class: 'GitSCM',
-                            branches: [[name: '*/main']],
-                            userRemoteConfigs: [[
-                                url: "${env.GIT_REPO_URL}",
-                                credentialsId: 'github-token'
-                            ]]
-                        ])
-                    }
-                }
+    steps {
+        script {
+            if (params.DEPLOY_TAG?.trim()) {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "v${params.DEPLOY_TAG}"]],
+                    userRemoteConfigs: [[
+                        url: "${env.GIT_REPO_URL}",
+                        credentialsId: 'github-token'
+                    ]],
+                    extensions: [[
+                        $class: 'CloneOption',
+                        noTags: false
+                    ]]
+                ])
+                echo "Checked out ver1 at tag v${params.DEPLOY_TAG}"
+            } else {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[
+                        url: "${env.GIT_REPO_URL}",
+                        credentialsId: 'github-token'
+                    ]]
+                ])
             }
         }
+    }
+}
         stage('Install Dependencies') {
             steps {
                 bat 'npm install'
