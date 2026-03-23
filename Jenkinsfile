@@ -72,18 +72,17 @@ pipeline {
                 }
             }
         }
-        stage('Deploy') {
-            steps {
-                echo "Deploying repo1 version ${env.NEW_VERSION}"
-                bat 'npm install'
-                echo "repo1 deployed successfully on port 3001"
-            }
-        }
-        stage('Notify repo3') {
+        stage('Notify vertotal') {
             steps {
                 script {
                     def newVersion = readFile('NEW_VERSION.txt').trim()
-                    build job: 'repo3-umbrella',
+                    echo "============================================"
+                    echo "NEW VERSION FILE CONTAINS: ${newVersion}"
+                    echo "JOB BEING CALLED: vertotal-pipeline"
+                    echo "REPO_NAME being sent: ver1"
+                    echo "REPO_VERSION being sent: ${newVersion}"
+                    echo "============================================"
+                    build job: 'vertotal-pipeline',
                           wait: true,
                           parameters: [
                               string(name: 'REPO_NAME',    value: 'ver2'),
@@ -95,7 +94,7 @@ pipeline {
         }
     }
     post {
-        success { echo "repo1 pipeline completed successfully" }
-        failure { echo "repo1 pipeline FAILED" }
+        success { echo "ver1 pipeline completed successfully" }
+        failure { echo "ver1 pipeline FAILED" }
     }
 }
