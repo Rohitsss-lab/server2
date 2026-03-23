@@ -1,6 +1,6 @@
 {
   "name": "ver1",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Service 1",
   "main": "src/index.js",
   "scripts": {
