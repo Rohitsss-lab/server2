@@ -6,11 +6,11 @@ pipeline {
     parameters {
         string(name: 'BUMP_TYPE',           defaultValue: 'patch', description: 'Version bump type')
         string(name: 'DEPLOY_TAG',          defaultValue: '',      description: 'Tag to deploy — leave blank for normal build')
-        string(name: 'TRIGGERED_BY_DEPLOY', defaultValue: 'false', description: 'Set to true when called from vertot deploy — prevents loop')
+        string(name: 'TRIGGERED_BY_DEPLOY', defaultValue: 'false', description: 'Set true when called from vertot deploy')
     }
     environment {
         GIT_REPO_URL = 'https://github.com/Rohitsss-lab/ver2.git'
-        IS_DEPLOY = "${params.DEPLOY_TAG?.trim() ? 'true' : 'false'}"
+        IS_DEPLOY    = "${params.DEPLOY_TAG?.trim() ? 'true' : 'false'}"
     }
     stages {
         stage('Clean Workspace') {
@@ -65,6 +65,12 @@ pipeline {
                 withEnv(["BUMP_TYPE=${params.BUMP_TYPE}"]) {
                     bat '"C:\\Program Files\\Python313\\python.exe" bump_version.py'
                 }
+                script {
+                    // Read and store version immediately after bump
+                    def newVersion = readFile('NEW_VERSION.txt').trim()
+                    env.NEW_VERSION = newVersion
+                    echo "New version is: ${env.NEW_VERSION}"
+                }
             }
         }
         stage('Commit and Push') {
@@ -77,10 +83,6 @@ pipeline {
                     usernameVariable: 'GIT_USER',
                     passwordVariable: 'GIT_TOKEN'
                 )]) {
-                    script {
-                        def newVersion = readFile('NEW_VERSION.txt').trim()
-                        env.NEW_VERSION = newVersion
-                    }
                     bat '''
                         git config user.email "jenkins@ci.com"
                         git config user.name "Jenkins"
@@ -119,14 +121,16 @@ pipeline {
             }
             steps {
                 script {
-                    def newVersion = readFile('NEW_VERSION.txt').trim()
-                    echo "Sending ver2 version ${newVersion} to vertot"
+                    echo "==========================================="
+                    echo "Notifying vertot with version: ${env.NEW_VERSION}"
+                    echo "==========================================="
                     build job: 'vertot',
                           wait: true,
                           parameters: [
                               string(name: 'REPO_NAME',    value: 'ver2'),
-                              string(name: 'REPO_VERSION', value: newVersion),
-                              string(name: 'BUMP_TYPE',    value: 'patch')
+                              string(name: 'REPO_VERSION', value: env.NEW_VERSION),
+                              string(name: 'BUMP_TYPE',    value: 'patch'),
+                              string(name: 'DEPLOY_VERSION', value: '')
                           ]
                 }
             }
