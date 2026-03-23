@@ -57,19 +57,21 @@ pipeline {
                 bat 'npm test'
             }
         }
-        stage('Bump Version') {
+            stage('Bump Version') {
             when {
-                environment name: 'IS_DEPLOY', value: 'false'
+                expression { return params.DEPLOY_TAG == null || params.DEPLOY_TAG.trim() == '' }
             }
             steps {
                 withEnv(["BUMP_TYPE=${params.BUMP_TYPE}"]) {
                     bat '"C:\\Program Files\\Python313\\python.exe" bump_version.py'
                 }
                 script {
-                    // Read and store version immediately after bump
-                    def newVersion = readFile('NEW_VERSION.txt').trim()
-                    env.NEW_VERSION = newVersion
-                    echo "New version is: ${env.NEW_VERSION}"
+                    // Read file and strip ALL whitespace and hidden characters
+                    def rawVersion = readFile('NEW_VERSION.txt')
+                    env.NEW_VERSION = rawVersion.replaceAll('[^0-9.]', '').trim()
+                    echo "==========================================="
+                    echo "BUMPED VERSION = ${env.NEW_VERSION}"
+                    echo "==========================================="
                 }
             }
         }
