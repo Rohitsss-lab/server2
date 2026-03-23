@@ -4,10 +4,13 @@ pipeline {
         nodejs 'NodeJS-20'
     }
     parameters {
-        string(name: 'BUMP_TYPE', defaultValue: 'patch', description: 'Version bump type')
+        string(name: 'BUMP_TYPE',           defaultValue: 'patch', description: 'Version bump type')
+        string(name: 'DEPLOY_TAG',          defaultValue: '',      description: 'Tag to deploy — leave blank for normal build')
+        string(name: 'TRIGGERED_BY_DEPLOY', defaultValue: 'false', description: 'Set to true when called from vertot deploy — prevents loop')
     }
     environment {
         GIT_REPO_URL = 'https://github.com/Rohitsss-lab/ver2.git'
+        IS_DEPLOY = "${params.DEPLOY_TAG?.trim() ? 'true' : 'false'}"
     }
     stages {
         stage('Clean Workspace') {
@@ -17,14 +20,28 @@ pipeline {
         }
         stage('Checkout') {
             steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: '*/main']],
-                    userRemoteConfigs: [[
-                        url: "${env.GIT_REPO_URL}",
-                        credentialsId: 'github-token'
-                    ]]
-                ])
+                script {
+                    if (params.DEPLOY_TAG?.trim()) {
+                        checkout([
+                            $class: 'GitSCM',
+                            branches: [[name: "refs/tags/v${params.DEPLOY_TAG}"]],
+                            userRemoteConfigs: [[
+                                url: "${env.GIT_REPO_URL}",
+                                credentialsId: 'github-token'
+                            ]]
+                        ])
+                        echo "Checked out ver2 at tag v${params.DEPLOY_TAG}"
+                    } else {
+                        checkout([
+                            $class: 'GitSCM',
+                            branches: [[name: '*/main']],
+                            userRemoteConfigs: [[
+                                url: "${env.GIT_REPO_URL}",
+                                credentialsId: 'github-token'
+                            ]]
+                        ])
+                    }
+                }
             }
         }
         stage('Install Dependencies') {
@@ -33,11 +50,17 @@ pipeline {
             }
         }
         stage('Run Tests') {
+            when {
+                environment name: 'IS_DEPLOY', value: 'false'
+            }
             steps {
                 bat 'npm test'
             }
         }
         stage('Bump Version') {
+            when {
+                environment name: 'IS_DEPLOY', value: 'false'
+            }
             steps {
                 withEnv(["BUMP_TYPE=${params.BUMP_TYPE}"]) {
                     bat '"C:\\Program Files\\Python313\\python.exe" bump_version.py'
@@ -45,6 +68,9 @@ pipeline {
             }
         }
         stage('Commit and Push') {
+            when {
+                environment name: 'IS_DEPLOY', value: 'false'
+            }
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'github-token',
@@ -72,16 +98,29 @@ pipeline {
                 }
             }
         }
-        stage('Notify vertotal') {
+        stage('Deploy') {
+            when {
+                environment name: 'IS_DEPLOY', value: 'true'
+            }
+            steps {
+                echo "==========================================="
+                echo "DEPLOYING ver2 at tag ${params.DEPLOY_TAG}"
+                echo "==========================================="
+                bat 'npm install'
+                echo "ver2 v${params.DEPLOY_TAG} deployed on port 3002"
+            }
+        }
+        stage('Notify vertot') {
+            when {
+                allOf {
+                    environment name: 'IS_DEPLOY', value: 'false'
+                    expression { return params.TRIGGERED_BY_DEPLOY == 'false' }
+                }
+            }
             steps {
                 script {
                     def newVersion = readFile('NEW_VERSION.txt').trim()
-                    echo "============================================"
-                    echo "NEW VERSION FILE CONTAINS: ${newVersion}"
-                    echo "JOB BEING CALLED: vertotal-pipeline"
-                    echo "REPO_NAME being sent: ver1"
-                    echo "REPO_VERSION being sent: ${newVersion}"
-                    echo "============================================"
+                    echo "Sending ver2 version ${newVersion} to vertot"
                     build job: 'vertot',
                           wait: true,
                           parameters: [
@@ -94,7 +133,7 @@ pipeline {
         }
     }
     post {
-        success { echo "ver1 pipeline completed successfully" }
-        failure { echo "ver1 pipeline FAILED" }
+        success { echo "ver2 pipeline completed successfully" }
+        failure { echo "ver2 pipeline FAILED" }
     }
 }
