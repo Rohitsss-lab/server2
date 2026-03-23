@@ -12,27 +12,44 @@ def bump(version, bump_type):
         patch += 1
     return f"{major}.{minor}.{patch}"
 
-bump_type = os.environ.get("BUMP_TYPE", "patch")
+repo_name    = os.environ.get("REPO_NAME", "ver2")
+repo_version = os.environ.get("REPO_VERSION", "1.0.0")
+bump_type    = os.environ.get("BUMP_TYPE", "patch")
+
+# DEBUG - print everything
+print("==========================================")
+print(f"REPO_NAME    = '{repo_name}'")
+print(f"REPO_VERSION = '{repo_version}'")
+print(f"BUMP_TYPE    = '{bump_type}'")
+print("==========================================")
 
 with open("versions.json", "r") as f:
-    vdata = json.load(f)
+    data = json.load(f)
 
-old_version = vdata["version"]
-new_version = bump(old_version, bump_type)
-vdata["version"] = new_version
+print(f"versions.json BEFORE: {data}")
+
+data[repo_name] = repo_version
+
+old_umbrella = data["umbrella"]
+new_umbrella = bump(old_umbrella, bump_type)
+data["umbrella"] = new_umbrella
+
+print(f"versions.json AFTER:  {data}")
 
 with open("versions.json", "w") as f:
-    json.dump(vdata, f, indent=2)
+    json.dump(data, f, indent=2)
 
-with open("package.json", "r") as f:
-    pdata = json.load(f)
+with open("NEW_UMBRELLA_VERSION.txt", "w") as f:
+    f.write(new_umbrella)
 
-pdata["version"] = new_version
+with open("NEW_TAG.txt", "w") as f:
+    f.write(f"v{new_umbrella}")
 
-with open("package.json", "w") as f:
-    json.dump(pdata, f, indent=2)
+with open("VER1_VERSION.txt", "w") as f:
+    f.write(data["ver1"])
 
-with open("NEW_VERSION.txt", "w") as f:
-    f.write(new_version)
+with open("VER2_VERSION.txt", "w") as f:
+    f.write(data["ver2"])
 
-print(f"Bumped {old_version} -> {new_version}")
+print(f"Umbrella: {old_umbrella} -> {new_umbrella}")
+print(f"Updated {repo_name} to {repo_version}")
