@@ -7,7 +7,7 @@ pipeline {
         string(name: 'BUMP_TYPE', defaultValue: 'patch', description: 'Version bump type')
     }
     environment {
-        GIT_REPO_URL = 'https://github.com/Rohitsss-lab/ver1.git'
+        GIT_REPO_URL = 'https://github.com/Rohitsss-lab/ver2.git'
     }
     stages {
         stage('Clean Workspace') {
@@ -61,7 +61,7 @@ pipeline {
                         git checkout -b release/v%NEW_VERSION%
                         git add versions.json package.json
                         git commit -m "chore: bump version to v%NEW_VERSION%"
-                        git remote set-url origin https://%GIT_USER%:%GIT_TOKEN%@github.com/Rohitsss-lab/ver1.git
+                        git remote set-url origin https://%GIT_USER%:%GIT_TOKEN%@github.com/Rohitsss-lab/ver2.git
                         git push origin release/v%NEW_VERSION%
                         git checkout main
                         git merge release/v%NEW_VERSION%
@@ -86,7 +86,7 @@ pipeline {
                     build job: 'repo3-umbrella',
                           wait: true,
                           parameters: [
-                              string(name: 'REPO_NAME',    value: 'ver1'),
+                              string(name: 'REPO_NAME',    value: 'ver2'),
                               string(name: 'REPO_VERSION', value: newVersion),
                               string(name: 'BUMP_TYPE',    value: 'patch')
                           ]
