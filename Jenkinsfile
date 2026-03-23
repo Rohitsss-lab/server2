@@ -82,7 +82,7 @@ pipeline {
                     echo "REPO_NAME being sent: ver1"
                     echo "REPO_VERSION being sent: ${newVersion}"
                     echo "============================================"
-                    build job: 'vertotal-pipeline',
+                    build job: 'vertot',
                           wait: true,
                           parameters: [
                               string(name: 'REPO_NAME',    value: 'ver2'),
