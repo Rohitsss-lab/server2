@@ -13,5 +13,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`server2 service running on port ${PORT} — v${version}`);
+  console.log(`server1 service running on port ${PORT} — v${version}`);
 });
