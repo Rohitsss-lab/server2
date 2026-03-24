@@ -1,7 +1,7 @@
 {
-  "name": "ver1",
-  "version": "1.0.5",
-  "description": "Service 1",
+  "name": "server2",
+  "version": "1.0.0",
+  "description": "Service 2",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
