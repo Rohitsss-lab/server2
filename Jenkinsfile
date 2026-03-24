@@ -104,11 +104,13 @@ pipeline {
                     echo "==========================================="
                     echo "Deploying server2 v${deployVersion} to ${env.SERVER_IP}"
                     echo "==========================================="
-                    sshagent(credentials: ['deploy-ssh-key']) {
-                        bat """
-                            ssh -o StrictHostKeyChecking=no root@${env.SERVER_IP} "cd ${env.DEPLOY_PATH} && git fetch --tags && git checkout tags/v${deployVersion} -f && npm install --production && pm2 restart server2 || pm2 start src/index.js --name server2 && pm2 save"
-                        """
-                    }
+withCredentials([file(credentialsId: 'deploy-ssh-key-file', variable: 'SSH_KEY')]) {
+    bat """
+        copy "%SSH_KEY%" "%TEMP%\\deploy_key"
+        ssh -i "%TEMP%\\deploy_key" -o StrictHostKeyChecking=no root@${env.SERVER_IP} "cd ${env.DEPLOY_PATH} && git fetch --tags && git checkout tags/v${deployVersion} -f && npm install --production && pm2 restart server1 || pm2 start src/index.js --name server1 && pm2 save"
+        del "%TEMP%\\deploy_key"
+    """
+}
                     echo "server2 v${deployVersion} is LIVE on server"
                 }
             }
