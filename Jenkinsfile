@@ -10,7 +10,7 @@ pipeline {
     }
     environment {
         GIT_REPO_URL = 'https://github.com/Rohitsss-lab/server2.git'
-        SERVER_IP    = 'YOUR_SERVER_IP'
+        SERVER_IP    = '192.168.3.178'
         DEPLOY_PATH  = '/root/server2'
     }
     stages {
